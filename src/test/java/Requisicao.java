@@ -198,8 +198,8 @@ public class Requisicao {
                 .auth().preemptive().basic(userTeste.getUserName(), userTeste.getPassword())
                 .when()
                 .pathParam("UUID", idTeste)
-                .delete("/Account/v1/User/ {UUID}")
-                .then().statusCode(HttpStatus.SC_OK).log().all();
+                .delete("/Account/v1/User/{UUID}")
+                .then().statusCode(HttpStatus.SC_NO_CONTENT).log().all();
     }
 
 
