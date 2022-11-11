@@ -15,58 +15,102 @@ public class Requisicao {
     //###########################################################################
     //############## MUDE O LOGIN E SENHA ANTES DE FAZER CADA TESTE #############
     //###########################################################################
-    User user = new User("fulano", "@Andre2710");
+    User user = new User("ANDREENEDINO", "@Andre2710");
+
+    //INICIALIZE A VARIÁVEL COM  O ID GERADO NO LOG DA REQUISIÇÃO testeCriaUsuario()
+    String userID = "7311092a-ec5c-46be-9f1e-9e1ccde1f146";
+
+    //INICIALIZE A VARIÁVEL COM  O TOKEN GERADO NO LOG DA REQUISIÇÃO testeGeraToken()
+    String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6IkFORFJFRU5FRElOTyIsInBhc3N3b3JkIjoiQEFuZHJlMjcxMCIsImlhdCI6MTY2ODEyODg2OH0.VWTOvb4NgJTHrUU3tiZKcIKKsTSQllQEcSqrqCe_B-Q";
 
     //###########################################################################
-
+    //##########################    URL BASE   ##################################
+    //###########################################################################
     @BeforeEach
     public void configtest(){
         RestAssured.baseURI = "https://bookstore.toolsqa.com";
     }
 
+    //###########################################################################
+    //##########################    TESTE 01   ##################################
+    //###########################################################################
     @Test
-    public void testePost01() {
+    public void testeCriaUsuario() throws Exception {
 
+        RestAssured.given().contentType(ContentType.JSON)
+                .when()
+                .body(user)
+                .post("/Account/v1/User")
+                .then().statusCode(HttpStatus.SC_CREATED).log().all();
+
+        /* TESTE EXTRAINDO DA REQUISIÇÃO
         String userID = RestAssured.given().contentType(ContentType.JSON)
                 .when()
                 .body(user)
                 .post("/Account/v1/User")
                 .then()
                 .extract().path("userID");
-
-        //PRÓXIMO TESTE
-        testePost02(userID);
+         */
     }
 
+    //###########################################################################
+    //##########################    TESTE 02   ##################################
+    //###########################################################################
     @Test
-    public void testePost02(String id) {
+    public void testeGeraToken() {
 
-        String token = RestAssured.given().contentType(ContentType.JSON)
+        RestAssured.given().contentType(ContentType.JSON)
                 .when()
                 .body(user)
                 .post("/Account/v1/GenerateToken")
-                .then().extract().path("token");
-
-        System.out.println("Token: "+token);
-
-        //PRÓXIMO TESTE
-        testePost03(id,token);
+                .then().statusCode(HttpStatus.SC_OK).log().all();
     }
 
+    //###########################################################################
+    //##########################    TESTE 03   ##################################
+    //###########################################################################
     @Test
-    public void testePost03(String userID, String token) {
+    public void testeAutoriza() {
         RestAssured.given().contentType(ContentType.JSON)
                 .when()
                 .body(user)
                 .post("/Account/v1/Authorized")
                 .then().statusCode(HttpStatus.SC_OK);
 
-        //PRÓXIMO TESTE
-        testePost04(userID, token);
     }
 
+    //###########################################################################
+    //##########################    TESTE 04   ##################################
+    //###########################################################################
     @Test
-    public void testePost04(String userID, String token) {
+    public void testeGetUsuario(){
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", token)
+                .auth().preemptive().basic(user.getUserName(), user.getPassword())
+                .when()
+                .pathParam("UUID", userID)
+                .get("/Account/v1/User/{UUID}")
+                .then()
+                .statusCode(HttpStatus.SC_OK).log().all();
+    }
+
+    //###########################################################################
+    //##########################    TESTE 05   ##################################
+    //###########################################################################
+    @Test
+    public void testeGetLivros(){
+        RestAssured.given().contentType(ContentType.JSON)
+                .when()
+                .get("/BookStore/v1/Books")
+                .then().statusCode(HttpStatus.SC_OK).log().all();
+    }
+
+    //###########################################################################
+    //##########################    TESTE 06   ##################################
+    //###########################################################################
+    @Test
+    public void testeInsereLivroNoUsuario() {
         Livro livro = new Livro("9781449325862");
         Livro livro2 = new Livro("9781449331818");
 
@@ -88,40 +132,13 @@ public class Requisicao {
                 .body(gson.toJson(books))
                 .post("/BookStore/v1/Books")
                 .then().statusCode(HttpStatus.SC_CREATED).log().all();
-
-        //PRÓXIMO TESTE
-        testeGet01(token, userID);
-
     }
 
+    //###########################################################################
+    //##########################    TESTE 07   ##################################
+    //###########################################################################
     @Test
-    public void testeGet01(String token, String idTeste){
-
-        RestAssured.given().contentType(ContentType.JSON)
-                .header("Authorization", token)
-                .auth().preemptive().basic(user.getUserName(), user.getPassword())
-                .when()
-                .pathParam("UUID", idTeste)
-                .get("/Account/v1/User/{UUID}")
-                .then()
-                .statusCode(HttpStatus.SC_OK).log().all();
-
-    }
-
-    //#######################################################################
-    //############ TESTES QUE NÃO PRECISAM DE AUTENTICAÇÃO ##################
-    //#######################################################################
-
-    @Test
-    public void testeGet02(){
-        RestAssured.given().contentType(ContentType.JSON)
-                .when()
-                .get("/BookStore/v1/Books")
-                .then().statusCode(HttpStatus.SC_OK).log().all();
-    }
-
-    @Test
-    public void testeGet03(){
+    public void testeGetLivroPorId(){
         RestAssured.given().contentType(ContentType.JSON)
                 .when()
                 .queryParam("ISBN","9781449331818")
@@ -131,32 +148,25 @@ public class Requisicao {
 
     }
 
-
-    //#######################################################################
-    //################# TESTES DELETE COM AUTENTICAÇÃO ######################
-    //#######################################################################
+    //###########################################################################
+    //##########################    TESTE 08   ##################################
+    //###########################################################################
     @Test
-    public void testeDelete01(){
-
-        //TOKEN GERADO NO testePost02
-        String tokenTeste = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6ImZ1bGFubyIsInBhc3N3b3JkIjoiQEFuZHJlMjcxMCIsImlhdCI6MTY2NzY4MjY0Mn0.EWqwrQ9q1s0jXpF5tWUVvxzW1pG7IUijkrdUtqoe_co";
-        //USUÁRIO DEVE SER O MESMO QUE FOI CRIADO NO testePost01
-        User userTeste = new User("fulano", "@Andre2710");
+    public void testeDeletaLivroDoUsuario(){
 
         Map<String, Object> parametros = new HashMap<>();
-        //ID EXTRAÍDO NO LOG DA REQUISIÇÃO DO testeGet01
-        String idTeste = "93b9f133-0e3a-4267-ac95-351c3caaeb7f";
-        //ISBN EXTRAÍDO NO LOG DA REQUISIÇÃO DO testeGet01
+
+        //ISBN EXTRAÍDO NO LOG DA REQUISIÇÃO DO testeGetLivros()
         String isbnTeste = "9781449325862";
 
         parametros.put("isbn",isbnTeste);
-        parametros.put("userId", idTeste);
+        parametros.put("userId", userID);
 
         Gson gson = new Gson();
 
         RestAssured.given().contentType(ContentType.JSON)
-                .header("Authorization", tokenTeste)
-                .auth().preemptive().basic(userTeste.getUserName(), userTeste.getPassword())
+                .header("Authorization", token)
+                .auth().preemptive().basic(user.getUserName(), user.getPassword())
                 .when()
                 .body(gson.toJson(parametros))
                 .delete("/BookStore/v1/Book")
@@ -164,44 +174,35 @@ public class Requisicao {
                 .statusCode(HttpStatus.SC_NO_CONTENT).log().all();
     }
 
+    //###########################################################################
+    //##########################    TESTE 09   ##################################
+    //###########################################################################
     @Test
-    public void testeDelete02(){
-
-        //TOKEN GERADO NO testePost02
-        String tokenTeste = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6ImZ1bGFubyIsInBhc3N3b3JkIjoiQEFuZHJlMjcxMCIsImlhdCI6MTY2NzY4MjY0Mn0.EWqwrQ9q1s0jXpF5tWUVvxzW1pG7IUijkrdUtqoe_co";
-        //USUÁRIO DEVE SER O MESMO QUE FOI CRIADO NO testePost01
-        User userTeste = new User("fulano", "@Andre2710");
+    public void testeDeletaTodosOsLivros(){
 
         RestAssured.given().contentType(ContentType.JSON)
-                .header("Authorization", tokenTeste)
-                .auth().preemptive().basic(userTeste.getUserName(), userTeste.getPassword())
+                .header("Authorization", token)
+                .auth().preemptive().basic(user.getUserName(), user.getPassword())
                 .when()
-                .queryParam("UserId","93b9f133-0e3a-4267-ac95-351c3caaeb7f")
+                .queryParam("UserId",userID)
                 .delete("/BookStore/v1/Books")
                 .then()
                 .statusCode(HttpStatus.SC_NO_CONTENT).log().all();
     }
 
+    //###########################################################################
+    //##########################    TESTE 10   ##################################
+    //###########################################################################
     @Test
-    public void testeDelete03(){
-
-        //TOKEN GERADO NO testePost02
-        String tokenTeste = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6ImZ1bGFubyIsInBhc3N3b3JkIjoiQEFuZHJlMjcxMCIsImlhdCI6MTY2NzY4MjY0Mn0.EWqwrQ9q1s0jXpF5tWUVvxzW1pG7IUijkrdUtqoe_co";
-        //USUÁRIO DEVE SER O MESMO QUE FOI CRIADO NO testePost01
-        User userTeste = new User("fulano", "@Andre2710");
-
-        //ID EXTRAÍDO NO LOG DA REQUISIÇÃO DO testeGet01
-        String idTeste = "93b9f133-0e3a-4267-ac95-351c3caaeb7f";
+    public void testeDeletaContaDoUsuario(){
 
         RestAssured.given().contentType(ContentType.JSON)
-                .header("Authorization", tokenTeste)
-                .auth().preemptive().basic(userTeste.getUserName(), userTeste.getPassword())
+                .header("Authorization", token)
+                .auth().preemptive().basic(user.getUserName(), user.getPassword())
                 .when()
-                .pathParam("UUID", idTeste)
+                .pathParam("UUID", userID)
                 .delete("/Account/v1/User/{UUID}")
                 .then().statusCode(HttpStatus.SC_NO_CONTENT).log().all();
     }
-
-
 
 }

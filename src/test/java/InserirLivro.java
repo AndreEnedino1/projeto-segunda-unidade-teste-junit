@@ -22,7 +22,4 @@ public class InserirLivro {
         return collectionOfIsbns;
     }
 
-    public void setLivro(ArrayList livro) {
-        this.collectionOfIsbns.add(livro);
-    }
 }
