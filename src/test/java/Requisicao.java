@@ -1,10 +1,12 @@
 import com.google.gson.Gson;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.module.jsv.JsonSchemaValidator;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,10 +20,10 @@ public class Requisicao {
     User user = new User("ANDREENEDINO", "@Andre2710");
 
     //INICIALIZE A VARIÁVEL COM  O ID GERADO NO LOG DA REQUISIÇÃO testeCriaUsuario()
-    String userID = "7311092a-ec5c-46be-9f1e-9e1ccde1f146";
+    String userID = "8ff4c521-2f38-457e-be26-b4eb067a6107";
 
     //INICIALIZE A VARIÁVEL COM  O TOKEN GERADO NO LOG DA REQUISIÇÃO testeGeraToken()
-    String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6IkFORFJFRU5FRElOTyIsInBhc3N3b3JkIjoiQEFuZHJlMjcxMCIsImlhdCI6MTY2ODEyODg2OH0.VWTOvb4NgJTHrUU3tiZKcIKKsTSQllQEcSqrqCe_B-Q";
+    String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6IkFORFJFRU5FRElOTyIsInBhc3N3b3JkIjoiQEFuZHJlMjcxMCIsImlhdCI6MTY2ODE3NDE1NX0.RUQaTYRCoOIm7CEO57Ydt-N0qbf-dm1d3sV4A0MSFSw";
 
     //###########################################################################
     //##########################    URL BASE   ##################################
@@ -85,6 +87,9 @@ public class Requisicao {
     @Test
     public void testeGetUsuario(){
 
+        //CONTÉM TESTE DE CONTRATO
+        File schema = new File("src/test/resources/schemas/teste.json");
+
         RestAssured.given().contentType(ContentType.JSON)
                 .header("Authorization", token)
                 .auth().preemptive().basic(user.getUserName(), user.getPassword())
@@ -92,7 +97,8 @@ public class Requisicao {
                 .pathParam("UUID", userID)
                 .get("/Account/v1/User/{UUID}")
                 .then()
-                .statusCode(HttpStatus.SC_OK).log().all();
+                .statusCode(HttpStatus.SC_OK).and()
+                .body(JsonSchemaValidator.matchesJsonSchema(schema));
     }
 
     //###########################################################################
